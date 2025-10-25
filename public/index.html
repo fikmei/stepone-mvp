@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>StepOne 🌱</title>
+    <link rel="stylesheet" href="reset.css" />
+    <link rel="stylesheet" href="style.css" />
+    <script defer src="app.js"></script>
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>StepOne 🌱</h1>
+        <p class="subtitle">지금 마음을 적어보세요.</p>
+      </header>
+
+      <!-- 대화 영역 (스크롤 담당) -->
+      <section id="chatContainer" class="chat-container"></section>
+
+      <!-- 입력창 (버튼 고정, textarea만 확장) -->
+      <footer class="input-area">
+        <textarea
+          id="userInput"
+          rows="1"
+          placeholder="예: 요즘 너무 무기력해요..."
+        ></textarea>
+        <button id="btnSend">전송</button>
+      </footer>
+    </main>
+  </body>
+</html>
