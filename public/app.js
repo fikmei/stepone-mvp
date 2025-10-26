@@ -125,15 +125,16 @@ function showToast(msg) {
   document.body.appendChild(t); // body 맨 아래에 추가 (화면에 표시됨)
 
   // 1.8초(1800ms) 뒤에 자동으로 사라지게 설정
-  setTimeout(() => t.remove(), 1800);
+  setTimeout(() => t.remove(), 2000);
 }
 
 
 // ===============================
-// ✉️ 실제 전송 처리 함수 (Day6: UX 안정화)
+// ✉️ 실제 전송 처리 함수 (Day6.5: UX 개선 — 입력창 즉시 리셋)
 // ===============================
 // 사용자가 Enter를 누르거나 "전송" 버튼을 눌렀을 때 실행됩니다.
-// ① 입력값 확인 → ② 사용자 말 출력 → ③ Gemini 요청 → ④ AI 응답 출력 → ⑤ 버튼/입력창 초기화
+// 흐름 요약:
+// ① 입력값 확인 → ② 사용자 말 출력 → ③ 입력창 비움(즉시) → ④ Gemini 요청 → ⑤ AI 응답 출력 → ⑥ 버튼 복구
 async function handleSend() {
   // 1️⃣ 입력값 가져오기 (앞뒤 공백 제거)
   const input = userInput.value.trim();
@@ -141,43 +142,44 @@ async function handleSend() {
   // 2️⃣ 아무것도 입력하지 않았다면 안내 후 종료
   if (!input) {
     showToast("한 줄만 써도 괜찮아요."); // 화면 하단에 짧은 안내 메시지
-    return; // 더 이상 실행하지 않음
+    return; // 실행 중단
   }
 
   // 3️⃣ 사용자가 입력한 내용을 화면에 추가
+  // → 사용자의 말이 바로 채팅창에 표시됩니다.
   addMessage("user", input);
 
   // 4️⃣ 감정(emotion)과 의도(intent)를 분석해서 백엔드로 함께 보냄
-  const intent = getIntent(input);     // 예: "도와줘" → help
-  const emotion = detectEmotion(input); // 예: "무기력" → low
+  const intent = getIntent(input);      // 예: "도와줘" → "help"
+  const emotion = detectEmotion(input); // 예: "무기력" → "low"
 
   // 5️⃣ 전송 중에는 버튼을 잠시 비활성화해서 중복 클릭 방지
-  btnSend.disabled = true;     // 클릭 못하게 잠금
-  btnSend.textContent = "…";   // 버튼 안의 글자 바꾸기 (로딩 느낌)
+  btnSend.disabled = true;    // 클릭 잠금
+  btnSend.textContent = "…";  // 로딩 느낌
+
+  // 🪄 6️⃣ Gemini 요청 전 — 입력창 즉시 리셋 (ChatGPT/Gemini 스타일)
+  // 사용자가 "전송"을 누른 순간 입력창이 바로 비워지고, AI 응답만 기다립니다.
+  userInput.value = "";
+  const base = parseFloat(userInput.dataset.baseHeight || String(BASE_REM));
+  userInput.style.height = base + "rem";
+  userInput.style.overflowY = "hidden";
 
   try {
-    // 6️⃣ FastAPI → Gemini 연결을 통해 실제 AI 응답 받기
+    // 7️⃣ FastAPI → Gemini 연결을 통해 실제 AI 응답 받기
     const r = await fetchPlan(input, emotion, intent);
 
-    // 7️⃣ AI 응답을 화면에 표시
+    // 8️⃣ AI 응답을 화면에 표시
     addMessage("ai", r.message, { emotion: r.emotion || emotion, intent });
 
-    // 8️⃣ 감정 테마(배경색) 변경
+    // 9️⃣ 감정 테마(배경색) 변경
     applyEmotionTheme(r.emotion || emotion);
 
   } finally {
-    // 9️⃣ 응답이 끝나면 버튼 다시 활성화
+    // 🔟 응답 완료 후 버튼 원상복구
     btnSend.disabled = false;
     btnSend.textContent = "전송";
   }
-
-  // 🔟 입력창을 초기 상태로 리셋
-  userInput.value = ""; // 입력 내용 삭제
-  const base = parseFloat(userInput.dataset.baseHeight || String(BASE_REM));
-  userInput.style.height = base + "rem"; // 기본 높이로 되돌리기
-  userInput.style.overflowY = "hidden";
 }
-
 
 // -------------------------------
 // ④ 메시지 추가 & 저장 기능
